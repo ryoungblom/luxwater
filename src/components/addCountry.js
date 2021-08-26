@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import Web3 from 'web3'
 import '../css/countries.css'
 
-import { COUNTRY_ABI, COUNTRY_ADDRESS } from '../config.js'
+//import { COUNTRY_ABI, COUNTRY_ADDRESS } from '../config.js'
+import { MARKETPLACE_ABI, MARKETPLACE_ADDRESS } from '../config.js'
 
 
 class NewCountry extends Component {
@@ -73,7 +74,7 @@ class NewCountry extends Component {
      this.state.countryData.methods.addCountry(name, total, perCap, epi, eh, ev).send({ from: this.state.account })
    }
 
- 
+
   render() {
     return (
 

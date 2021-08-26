@@ -3,9 +3,9 @@ import '../App.css';
 import '../css/marketplace.css'
 import Web3 from 'web3'
 
-import { COUNTRY_ABI, COUNTRY_ADDRESS } from '../config.js'
+import { MARKETPLACE_ABI, MARKETPLACE_ADDRESS } from '../config.js'
 
-import NewCountry from '../components/addCountry.js'
+import NewToken from '../components/addToken.js'
 
 class Marketplace extends Component {
 
@@ -30,12 +30,12 @@ class Marketplace extends Component {
       tokens: [],
       headers: [
         "ID",
-        "Name",
+        "Token",
+        "Owner",
         "State",
         "Address",
         "Type",
         "Price",
-        "Agreement",
         "Edit"],
       loading: true,
       showHistory: false,
@@ -96,9 +96,9 @@ class Marketplace extends Component {
     this.isInstalled();
     this.isLocked(web3);
 
-    const countryData = new web3.eth.Contract(COUNTRY_ABI, COUNTRY_ADDRESS)
+    const marketplaceData = new web3.eth.Contract(MARKETPLACE_ABI, MARKETPLACE_ADDRESS)
 
-    this.setState({ countryData })
+    this.setState({ marketplaceData })
 
     const accounts = await web3.eth.getAccounts()
     const balanceInWei = await web3.eth.getBalance(accounts[0])
@@ -116,22 +116,27 @@ class Marketplace extends Component {
 
     this.setState({ tokens: [] })
 
-    var countryCount = await this.state.countryData.methods.countryCount().call()
+    var marketCount = await this.state.marketplaceData.methods.liquidTokens().call()
 
-    for (var i = 0; i < countryCount; i++) {
-      const singleCountry = await this.state.countryData.methods.countries(i).call()
+    for (var i = 0; i < marketCount; i++) {
+      const singleToken = await this.state.marketplaceData.methods.marketplace(i).call()
       this.setState({
-        tokens: [...this.state.tokens, singleCountry]
+        tokens: [...this.state.tokens, singleToken]
       })
     }
   }
 
 
-  async updateCountry(id, name, total, perCap, epi, eh, ev) {
+  async updateMarketEntry(id, state, pAddress, type, price) {
 
     this.setState({loading:false})
 
-    this.state.countryData.methods.updateCountry(id, name, total, perCap, epi, eh, ev).send({ from: this.state.account }).once('receipt', (receipt) => {
+    console.log(id)
+    console.log(state)
+    console.log(pAddress)
+    console.log(price)
+
+    this.state.marketplaceData.methods.updateMarketEntry(parseInt(id), state, String(pAddress), type, price).send({ from: this.state.account }).once('receipt', (receipt) => {
         this.setState({ editing: false })
         this.getData()
       })
@@ -143,10 +148,9 @@ class Marketplace extends Component {
   /*
   { this.state.loading
     ? <div id="loader" className=""><p className="">Communicating with blockchain...</p></div>
-    : <Thought
-      thoughts={this.state.thoughts}
-      createThought={this.createThought}
-      hand = {this.state.currentHandle}
+    : <Market
+      marketRender={this.state.tokens}
+      <NewToken />
       acct = {this.state.account}
      />
 
@@ -154,9 +158,9 @@ class Marketplace extends Component {
   */
 
 
-  editing(country) {
+  editing(marketplace) {
 
-    this.setState({ updating: country })
+    this.setState({ updating: marketplace })
     this.setState({ editing: true })
 
   }
@@ -164,63 +168,56 @@ class Marketplace extends Component {
 
   renderEditData(toUpdate) {
 
-      return this.state.tokens.map((eachCountry, index) => {
-         const { id, country, totalCO2, perCapCO2, envPerfIndex, envHealth, ecoVitality } = eachCountry //destructuring
+      return this.state.tokens.map((eachToken, index) => {
+         const { id, token, owner, state, physicalAddress, typeToken, price } = eachToken //destructuring
 
          if (id == toUpdate) {
            return (
                 <tr key={id}>
                    <td>{id}</td>
 
-                   <td>{country}</td>
+                   <td>{token}</td>
+
+                   <td>{owner}</td>
 
                    <td>
-                    <form className = "sendForm" id="updateCountryForm" onSubmit={(event) => {
-                     event.preventDefault()
-                     this.updateCountry(id, country, this.newTotal.value, this.newPerCap.value, this.newEPI.value, this.newEH.value, this.newEV.value)
-                    }}>
-                      <input ref={(input) => this.newTotal = input} type="text" className="addCountryForm" defaultValue={totalCO2} required />
-                    </form>
-                   </td>
-
-                   <td>
-                     <form className = "sendForm" id="updateCountryForm" onSubmit={(event) => {
+                     <form className = "sendForm" id="updateMarketEntryForm" onSubmit={(event) => {
                       event.preventDefault()
-                      this.updateCountry(id, country, this.newTotal.value, this.newPerCap.value, this.newEPI.value, this.newEH.value, this.newEV.value)
+                      this.updateMarketEntry(id, this.newState.value, this.newAddress.value, this.newType.value, this.newPrice.value)
                      }}>
-                       <input ref={(input) => this.newPerCap = input} type="text" className="addCountryForm" defaultValue={perCapCO2} required />
+                       <input ref={(input) => this.newState = input} type="text" className="addCountryForm" defaultValue={state} required />
                      </form>
                    </td>
 
                    <td>
-                     <form className = "sendForm" id="updateCountryForm" onSubmit={(event) => {
+                     <form className = "sendForm" id="updateMarketEntryForm" onSubmit={(event) => {
                       event.preventDefault()
-                      this.updateCountry(id, country, this.newTotal.value, this.newPerCap.value, this.newEPI.value, this.newEH.value, this.newEV.value)
+                      this.updateMarketEntry(id, this.newState.value, this.newAddress.value, this.newType.value, this.newPrice.value)
                      }}>
-                       <input ref={(input) => this.newEPI = input} type="text" className="addCountryForm" defaultValue={envPerfIndex} required />
+                       <input ref={(input) => this.newAddress = input} type="text" className="addCountryForm" defaultValue={physicalAddress} required />
                      </form>
                    </td>
 
                    <td>
-                     <form className = "sendForm" id="updateCountryForm" onSubmit={(event) => {
+                     <form className = "sendForm" id="updateMarketEntryForm" onSubmit={(event) => {
                       event.preventDefault()
-                      this.updateCountry(id, country, this.newTotal.value, this.newPerCap.value, this.newEPI.value, this.newEH.value, this.newEV.value)
+                      this.updateMarketEntry(id, this.newState.value, this.newAddress.value, this.newType.value, this.newPrice.value)
                      }}>
-                       <input ref={(input) => this.newEH = input} type="text" className="addCountryForm" defaultValue={envHealth} required />
+                       <input ref={(input) => this.newType = input} type="text" className="addCountryForm" defaultValue={typeToken} required />
                      </form>
                    </td>
 
                    <td>
-                     <form className = "sendForm" id="updateCountryForm" onSubmit={(event) => {
+                     <form className = "sendForm" id="updateMarketEntryForm" onSubmit={(event) => {
                       event.preventDefault()
-                      this.updateCountry(id, country, this.newTotal.value, this.newPerCap.value, this.newEPI.value, this.newEH.value, this.newEV.value)
+                      this.updateMarketEntry(id, this.newState.value, this.newAddress.value, this.newType.value, this.newPrice.value)
                      }}>
-                       <input ref={(input) => this.newEV = input} type="text" className="addCountryForm" defaultValue={ecoVitality} required />
+                       <input ref={(input) => this.newPrice = input} type="text" className="addCountryForm" defaultValue={price} required />
                      </form>
                    </td>
 
                    <td>
-                    <input type="submit" hidden={false} form="updateCountryForm"/>
+                    <input type="submit" hidden={false} form="updateMarketEntryForm"/>
                    </td>
                 </tr>
            )
@@ -230,12 +227,12 @@ class Marketplace extends Component {
            return (
               <tr key={id}>
                  <td>{id}</td>
-                 <td>{country}</td>
-                 <td>{totalCO2}</td>
-                 <td>{perCapCO2}</td>
-                 <td>{envPerfIndex}</td>
-                 <td>{envHealth}</td>
-                 <td>{ecoVitality}</td>
+                 <td>{token}</td>
+                 <td>{owner}</td>
+                 <td>{state}</td>
+                 <td>{physicalAddress}</td>
+                 <td>{typeToken}</td>
+                 <td>{price}</td>
                  <td>
                   <button> Submit </button>
                  </td>
@@ -247,17 +244,17 @@ class Marketplace extends Component {
 
 
   renderTableData() {
-      return this.state.tokens.map((eachCountry, index) => {
-         const { id, country, totalCO2, perCapCO2, envPerfIndex, envHealth, ecoVitality } = eachCountry //destructuring
+      return this.state.tokens.map((eachToken, index) => {
+         const { id, token, owner, state, physicalAddress, typeToken, price } = eachToken //destructuring
          return (
             <tr key={id}>
                <td>{id}</td>
-               <td onClick={() => this.showEditHistory(country)}>{country}</td>
-               <td>{totalCO2}</td>
-               <td>{perCapCO2}</td>
-               <td>{envPerfIndex}</td>
-               <td>{envHealth}</td>
-               <td>{ecoVitality}</td>
+               <td onClick={() => this.showEditHistory(token)}>{token}</td>
+               <td>{owner}</td>
+               <td>{state}</td>
+               <td>{physicalAddress}</td>
+               <td>{typeToken}</td>
+               <td>{price}</td>
                <td>
                 <button onClick={() => this.editing(id)}> Edit </button>
                </td>
@@ -301,7 +298,7 @@ class Marketplace extends Component {
             </table>
           </div>
 
-          <NewCountry />
+          <NewToken />
 
           <div className="paddedDiv" />
 
